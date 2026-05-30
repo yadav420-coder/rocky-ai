@@ -5,89 +5,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rocky AI</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
-        body { background-color: #121212; color: white; display: flex; flex-direction: column; height: 100vh; }
-        
-        /* Header Style */
-        .header { background: linear-gradient(135deg, #ff416c, #ff4b2b); padding: 20px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        
-        /* Chat Box */
+        body { font-family: Arial, sans-serif; background-color: #121212; color: white; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
+        .chat-header { background-color: #1f1f1f; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; border-bottom: 2px solid #333; color: #00ffcc; }
         .chat-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .message { max-width: 80%; padding: 12px 16px; border-radius: 20px; font-size: 16px; line-height: 1.4; }
-        .user-msg { background-color: #0084ff; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .rocky-msg { background-color: #2a2a2a; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #444; }
-        
-        /* Input Area */
-        .input-area { padding: 15px; background-color: #1e1e1e; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border: none; border-radius: 25px; background-color: #2d2d2d; color: white; font-size: 16px; outline: none; }
-        button { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; border: none; padding: 12px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; }
+        .message { max-width: 80%; padding: 12px 16px; border-radius: 15px; font-size: 16px; line-height: 1.4; word-wrap: break-word; }
+        .user-msg { background-color: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .rocky-msg { background-color: #2a2a2a; color: #00ffcc; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #444; }
+        .input-area { padding: 15px; background-color: #1f1f1f; display: flex; gap: 10px; border-top: 2px solid #333; }
+        input { flex: 1; padding: 12px; border-radius: 25px; border: none; background-color: #333; color: white; font-size: 16px; outline: none; }
+        button { background-color: #00ffcc; color: black; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 25px; cursor: pointer; transition: 0.2s; }
+        button:hover { background-color: #00cc99; }
     </style>
 </head>
 <body>
 
-    <div class="header">ROCKY AI</div>
-
+    <div class="chat-header">⚡ ROCKY AI ⚡</div>
+    
     <div class="chat-container" id="chatContainer">
-        <div class="message rocky-msg">Yo! Main hoon Rocky. Bol bhai, kya help chahiye tere ko?</div>
+        <div class="message rocky-msg">Bolo bhai! Main hoon Rocky. Aaj tera bhai teri kya madad kare?</div>
     </div>
 
     <div class="input-area">
-        <input type="text" id="userInput" placeholder="Rocky se kuch pucho..." onkeypress="handleKeyPress(event)">
+        <input type="text" id="userInput" placeholder="Rocky se kuch bhi pucho..." onkeypress="if(event.key === 'Enter') sendMessage()">
         <button onclick="sendMessage()">Send</button>
     </div>
+    
+   <script>
+        const API_KEY = "AQ.Ab8RN6L3SaPSYcJwpIJLcQHEn98pyWgql2zPuCr9ros4pCFarw";
 
-    <script>
-        // Rocky ka dimaag (Abhi hum basic replies set kar rahe hain)
-        // Agle step mein isko asli AI se connect kar sakte hain API ke throug
-        function getRockyResponse(userInput) {
-            let input = userInput.toLowerCase();
-            
-            if (input.includes('hello') || input.includes('hi')) {
-                return "Hello bhai! Kaise ho? Aaj Rocky kya karega tumhare liye?";
-            } else if (input.includes('kaise ho')) {
-                return "Ekdum jhakaas, mast! Tum batao, padhai-likhai kaisi chal rahi hai?";
-            } else if (input.includes('naam')) {
-                return "Mera naam Rocky hai, tere bhai ka apna AI assistant!";
-            } else if (input.includes('apna app kaise banaye')) {
-                return "Bhai, tum abhi wahi toh kar rahe ho! Tum coding seekh rahe ho, proud of you.";
-            } else {
-                return "Sahi baat hai bhai! Lekin abhi main thoda chota baccha hoon na, toh sab kuch nahi samajhta. Dhire-dhire seekh jaunga!";
+        async function sendMessage() {
+            const inputField = document.getElementById("userInput");
+            const messageText = inputField.value.trim();
+            if (!messageText) return;
+
+            appendMessage(messageText, "user-msg");
+            inputField.value = "";
+
+            const loadingId = appendMessage("Rocky soch raha hai...", "rocky-msg");
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: "You are Rocky AI, a cool and helpful brotherly AI assistant who speaks friendly Hindi/Hinglish. Answer this question: " + messageText }] }]
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById(loadingId).remove();
+
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    let aiReply = data.candidates[0].content.parts[0].text;
+                    appendMessage(aiReply, "rocky-msg");
+                } else {
+                    appendMessage("Bhai, thoda jhol ho gaya. Fir se pucho!", "rocky-msg");
+                }
+            } catch (error) {
+                document.getElementById(loadingId).remove();
+                appendMessage("Net ka chakkar hai lagta hai bhai, reply nahi aaya.", "rocky-msg");
+                console.error(error);
             }
         }
 
-        function sendMessage() {
-            let inputField = document.getElementById("userInput");
-            let userText = inputField.value.trim();
-            if (userText === "") return;
-
-            let chatContainer = document.getElementById("chatContainer");
-
-            // User ka message screen par dikhao
-            let userDiv = document.createElement("div");
-            userDiv.className = "message user-msg";
-            userDiv.innerText = userText;
-            chatContainer.appendChild(userDiv);
-
-            inputField.value = ""; // Input clear karo
-            chatContainer.scrollTop = chatContainer.scrollHeight; // Auto scroll
-
-            // Rocky ka reply generate karo thodi der baad (Loading feel ke liye)
-            setTimeout(() => {
-                let rockyReply = getRockyResponse(userText);
-                let rockyDiv = document.createElement("div");
-                rockyDiv.className = "message rocky-msg";
-                rockyDiv.innerText = rockyReply;
-                chatContainer.appendChild(rockyDiv);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }, 600);
-        }
-
-        function handleKeyPress(event) {
-            if (event.key === "Enter") {
-                sendMessage();
-            }
+        function appendMessage(text, className) {
+            const chatContainer = document.getElementById("chatContainer");
+            const msgDiv = document.createElement("div");
+            const uniqueId = "msg-" + Date.now();
+            msgDiv.id = uniqueId;
+            msgDiv.className = `message ${className}`;
+            msgDiv.innerText = text;
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return uniqueId;
         }
     </script>
 </body>
-          </html>
-          
+</html>
+
